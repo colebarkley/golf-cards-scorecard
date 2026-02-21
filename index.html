@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Golf Card Game Scorecard</title>
     <style>
-        /* Morning Dew Background: Fades from sky-white to soft grass-green */
+        /* Morning Dew Background: Sky-white to soft grass-green */
         body { 
             font-family: 'Segoe UI', -apple-system, sans-serif; 
             background: linear-gradient(to bottom, #ffffff 0%, #e8f5e9 100%);
@@ -27,19 +27,32 @@
 
         .hidden { display: none !important; }
         
-        /* Banner Styles - Compact Version */
+        /* RESPONSIVE BANNER SYSTEM */
         .banner-box {
             width: calc(100% + 40px);
-            height: 140px; 
+            height: 140px; /* Default for Phones */
             overflow: hidden;
             margin: -20px -20px 20px -20px; 
             border-bottom: 4px solid #2e7d32;
         }
+        
         #customBanner {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            object-position: center 30%; 
+            object-position: center 52%; 
+        }
+
+        /* iPad / Tablet Adjustments */
+        @media (min-width: 768px) {
+            .banner-box { height: 250px; }
+            #customBanner { object-position: center 60%; }
+            th, td { padding: 15px 10px; font-size: 1.1em; }
+        }
+
+        /* Desktop Adjustments */
+        @media (min-width: 1024px) {
+            .banner-box { height: 320px; }
         }
 
         /* Setup & Common Styles */
@@ -189,7 +202,7 @@ function startGame() {
         let rowHTML = `<td><button class="btn btn-clear" onclick="clearRow(${p})">X</button></td>`;
         rowHTML += `<td id="p${p}-label" style="font-weight:bold; background:#f4f4f4;">${nameVal}</td>`;
         for(let h=1; h<=hCount; h++) {
-            // Note: inputmode="text" allows mobile users to see the "-" sign more easily on some keyboards
+            // Simplified number input for negative score support
             rowHTML += `<td><input type="number" class="p${p}-score score-input" value="0" oninput="updateTotals()"></td>`;
         }
         rowHTML += `<td id="p${p}-total" class="total-cell">0</td>`;
