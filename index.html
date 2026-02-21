@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Golf Card Game Scorecard</title>
+    <style>
+        body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f0f2f5; padding: 15px; margin: 0; }
+        .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 1000px; margin: 20px auto; }
+        .hidden { display: none !important; }
+        
+        /* Setup & Common Styles */
+        .setup-group { margin-bottom: 15px; }
+        .name-entry-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin: 15px 0; }
+        input[type="text"], input[type="number"], select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; -webkit-appearance: none; }
+        
+        /* Table Styles */
+        .table-wrapper { overflow-x: auto; margin-top: 20px; border-radius: 8px; border: 1px solid #ddd; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { border: 1px solid #eee; padding: 12px 8px; text-align: center; }
+        th { background-color: #2e7d32; color: white; position: sticky; top: 0; }
+        
+        /* Scoring Styles */
+        .score-input { width: 45px; height: 35px; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-size: 16px; }
+        .total-cell { font-weight: bold; background: #f9f9f9; font-size: 1.1em; width: 60px; }
+        .leader { background-color: #ffd700 !important; color: #000; }
+        
+        /* Buttons */
+        .btn { background: #2e7d32; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.2s; -webkit-tap-highlight-color: transparent; }
+        .btn:active { transform: scale(0.98); opacity: 0.9; }
+        .btn-clear { background: #607d8b; padding: 5px 10px; font-size: 12px; width: auto; }
+        .btn-finish { background: #1565c0; width: 100%; margin-top: 20px; }
+        .btn-reset { background: #d32f2f; margin-top: 10px; width: 100%; }
+        .btn-new-game { background: #2e7d32; width: 100%; margin-top: 10px; }
+
+        /* History Section */
+        .history-section { margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px; }
+        .history-table { font-size: 14px; margin-top: 10px; }
+        .history-table th { background-color: #455a64; }
+
+        /* Modal Styles */
+        #modalOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .modal { background: white; padding: 30px; border-radius: 12px; width: 85%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .ranking-list { text-align: left; margin: 20px 0; list-style: none; padding: 0; max-height: 40vh; overflow-y: auto; }
+        .ranking-item { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .first-place { font-weight: bold; color: #2e7d32; font-size: 1.2em; border-left: 5px solid #ffd700; padding-left: 10px; background: #fffde7; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="setupArea">
+        <h2>⛳ Golf Game Setup</h2>
+        <div class="setup-group">
+            <label>Holes: </label>
+            <select id="holeCount">
+                <option value="6">6</option>
+                <option value="9" selected>9</option>
+                <option value="12">12</option>
+                <option value="15">15</option>
+                <option value="18">18</option>
+            </select>
+        </div>
+        <div class="setup-group">
+            <label>Players (3-12): </label>
+            <input type="number" id="playerCount" value="4" min="3" max="12" oninput="generateNameFields()">
+        </div>
+        <div id="nameFields" class="name-entry-list"></div>
+        <button class="btn" onclick="startGame()" style="width:100%">Start Game & Lock Names</button>
+
+        <div class="history-section">
+            <h3>📜 Match History</h3>
+            <div class="table-wrapper">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Winner</th>
+                            <th>Score</th>
+                            <th>Holes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody"></tbody>
+                </table>
+            </div>
+            <button class="btn btn-clear" onclick="clearHistory()" style="margin-top: 10px; width: 100%;">Clear All History</button>
+        </div>
+    </div>
+
+    <div id="gameArea" class="hidden">
+        <h2 id="displayHoles">Scorecard</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr id="headerRow"></tr></thead>
+                <tbody id="scoreBody"></tbody>
+            </table>
+        </div>
+        <button class="btn btn-finish" onclick="finishGame()">🏁 Finish Game & Show Winner</button>
+        <button class="btn btn-reset" onclick="confirmReset()">Reset Current Game</button>
+    </div>
+</div>
+
+<div id="modalOverlay" class="hidden">
+    <div class="modal">
+        <h1 id="winnerEmoji">🏆</h1>
+        <h2 id="winnerName">Winner!</h2>
+        <div id="rankingContainer" class="ranking-list"></div>
+        <button class="btn btn-new-game" onclick="startNewGame()">Save & Start New Game</button>
+        <button class="btn btn-clear" onclick="closeModal()" style="margin-top:10px; background: #777;">Back to Scorecard</button>
+    </div>
+</div>
+
+<script>
+window.onload = () => {
+    generateNameFields();
+    loadHistory();
+};
+
+function generateNameFields() {
+    let count = parseInt(document.getElementById('playerCount').value);
+    if (isNaN(count)) count = 3;
+    count = Math.min(Math.max(count, 3), 12);
+    
+    const container = document.getElementById('nameFields');
+    const currentValues = Array.from(container.querySelectorAll('input')).map(input => input.value);
+    
+    container.innerHTML = '';
+    for (let i = 1; i <= count; i++) {
+        const val = currentValues[i-1] || '';
+        container.innerHTML += `<input type="text" id="name-input-${i}" placeholder="Player ${i}" value="${val}">`;
+    }
+}
+
+function startGame() {
+    const pCount = document.getElementById('playerCount').value;
+    const hCount = document.getElementById('holeCount').value;
+    
+    document.getElementById('setupArea').classList.add('hidden');
+    document.getElementById('gameArea').classList.remove('hidden');
+    document.getElementById('displayHoles').innerText = `${hCount} Hole Golf Card Game`;
+
+    const headerRow = document.getElementById('headerRow');
+    headerRow.innerHTML = '<th>X</th><th>Player</th>';
+    for(let i=1; i<=hCount; i++) headerRow.innerHTML += `<th>${i}</th>`;
+    headerRow.innerHTML += '<th>Total</th>';
+
+    const scoreBody = document.getElementById('scoreBody');
+    scoreBody.innerHTML = '';
+    for(let p=1; p<=pCount; p++) {
+        const nameVal = document.getElementById(`name-input-${p}`).value || `Player ${p}`;
+        const row = document.createElement('tr');
+        row.id = `row-p${p}`;
+        let rowHTML = `<td><button class="btn btn-clear" onclick="clearRow(${p})">X</button></td>`;
+        rowHTML += `<td id="p${p}-label" style="font-weight:bold; background:#f4f4f4;">${nameVal}</td>`;
+        for(let h=1; h<=hCount; h++) {
+            rowHTML += `<td><input type="number" class="p${p}-score score-input" value="0" inputmode="numeric" oninput="updateTotals()"></td>`;
+        }
+        rowHTML += `<td id="p${p}-total" class="total-cell">0</td>`;
+        row.innerHTML = rowHTML;
+        scoreBody.appendChild(row);
+    }
+    window.scrollTo(0,0);
+}
+
+function updateTotals() {
+    const pCount = document.getElementById('playerCount').value;
+    let scores = [];
+    for(let p=1; p<=pCount; p++) {
+        const inputs = document.querySelectorAll(`.p${p}-score`);
+        let sum = 0;
+        inputs.forEach(i => sum += parseInt(i.value) || 0);
+        const cell = document.getElementById(`p${p}-total`);
+        cell.innerText = sum;
+        cell.classList.remove('leader');
+        scores.push({ val: sum, id: `p${p}-total` });
+    }
+    const min = Math.min(...scores.map(s => s.val));
+    scores.forEach(s => { 
+        if(s.val === min) document.getElementById(s.id).classList.add('leader'); 
+    });
+}
+
+function clearRow(playerIndex) {
+    if(confirm("Clear all scores for this player?")) {
+        const inputs = document.querySelectorAll(`.p${playerIndex}-score`);
+        inputs.forEach(i => i.value = 0);
+        updateTotals();
+    }
+}
+
+function finishGame() {
+    const pCount = document.getElementById('playerCount').value;
+    let results = [];
+    for(let p=1; p<=pCount; p++) {
+        results.push({
+            name: document.getElementById(`p${p}-label`).innerText,
+            score: parseInt(document.getElementById(`p${p}-total`).innerText)
+        });
+    }
+
+    results.sort((a, b) => a.score - b.score);
+
+    const container = document.getElementById('rankingContainer');
+    container.innerHTML = '';
+    document.getElementById('winnerName').innerText = `${results[0].name} Wins!`;
+    
+    results.forEach((player, index) => {
+        const item = document.createElement('div');
+        item.className = `ranking-item ${index === 0 ? 'first-place' : ''}`;
+        item.innerHTML = `<span>${index + 1}. ${player.name}</span> <span>${player.score}</span>`;
+        container.appendChild(item);
+    });
+
+    document.getElementById('modalOverlay').classList.remove('hidden');
+    
+    // Auto-save result to history
+    saveToHistory(results[0].name, results[0].score);
+}
+
+function saveToHistory(winner, score) {
+    const hCount = document.getElementById('holeCount').value;
+    const date = new Date().toLocaleDateString();
+    const history = JSON.parse(localStorage.getItem('golfHistory') || '[]');
+    
+    history.unshift({ date, winner, score, holes: hCount });
+    localStorage.setItem('golfHistory', JSON.stringify(history.slice(0, 10))); // Keep last 10
+    loadHistory();
+}
+
+function loadHistory() {
+    const history = JSON.parse(localStorage.getItem('golfHistory') || '[]');
+    const body = document.getElementById('historyBody');
+    body.innerHTML = '';
+    
+    if(history.length === 0) {
+        body.innerHTML = '<tr><td colspan="4">No games played yet.</td></tr>';
+        return;
+    }
+
+    history.forEach(game => {
+        body.innerHTML += `
+            <tr>
+                <td>${game.date}</td>
+                <td><strong>${game.winner}</strong></td>
+                <td>${game.score}</td>
+                <td>${game.holes}</td>
+            </tr>
+        `;
+    });
+}
+
+function clearHistory() {
+    if(confirm("Permanently delete match history?")) {
+        localStorage.removeItem('golfHistory');
+        loadHistory();
+    }
+}
+
+function closeModal() { 
+    document.getElementById('modalOverlay').classList.add('hidden'); 
+}
+
+function startNewGame() {
+    closeModal();
+    document.getElementById('gameArea').classList.add('hidden');
+    document.getElementById('setupArea').classList.remove('hidden');
+    window.scrollTo(0,0);
+}
+
+function confirmReset() { 
+    if(confirm("Reset entire game and clear names?")) {
+        window.location.reload();
+    } 
+}
+</script>
+</body>
+</html>
