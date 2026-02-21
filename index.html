@@ -6,9 +6,24 @@
     <title>Golf Card Game Scorecard</title>
     <style>
         body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f0f2f5; padding: 15px; margin: 0; }
-        .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 1000px; margin: 20px auto; }
+        .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 1000px; margin: 20px auto; overflow: hidden; }
         .hidden { display: none !important; }
         
+        /* Banner Styles - Compact Version */
+        .banner-box {
+            width: calc(100% + 40px); /* Offsets container padding */
+            height: 140px; /* Reduced height for smaller banner */
+            overflow: hidden;
+            margin: -20px -20px 20px -20px; /* Aligns to top edges */
+            border-bottom: 4px solid #2e7d32;
+        }
+        #customBanner {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center 30%; /* Focuses on the island green */
+        }
+
         /* Setup & Common Styles */
         .setup-group { margin-bottom: 15px; }
         .name-entry-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin: 15px 0; }
@@ -50,8 +65,8 @@
 
 <div class="container">
     <div class="banner-box">
-    <img src="banner-green-ace.jpg" alt="TPC Sawgrass Ace Green" id="customBanner">
-</div>
+        <img src="banner-green-ace.jpg" alt="TPC Sawgrass Ace Green" id="customBanner">
+    </div>
     <div id="setupArea">
         <h2>⛳ Golf Card Game Scorecard</h2>
         <div class="setup-group">
@@ -216,7 +231,6 @@ function finishGame() {
 
     document.getElementById('modalOverlay').classList.remove('hidden');
     
-    // Auto-save result to history
     saveToHistory(results[0].name, results[0].score);
 }
 
@@ -226,7 +240,7 @@ function saveToHistory(winner, score) {
     const history = JSON.parse(localStorage.getItem('golfHistory') || '[]');
     
     history.unshift({ date, winner, score, holes: hCount });
-    localStorage.setItem('golfHistory', JSON.stringify(history.slice(0, 10))); // Keep last 10
+    localStorage.setItem('golfHistory', JSON.stringify(history.slice(0, 10))); 
     loadHistory();
 }
 
